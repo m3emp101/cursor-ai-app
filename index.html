@@ -1,1 +1,256 @@
-This is an index file
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple To-Do List</title>
+    <style>
+      :root {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        background: radial-gradient(circle at top, #f3f4f6, #d1d5db);
+        padding: 2rem 1rem;
+      }
+
+      .app {
+        width: min(480px, 100%);
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        padding: 2rem;
+        backdrop-filter: blur(6px);
+      }
+
+      h1 {
+        margin: 0 0 1.5rem;
+        font-size: clamp(1.8rem, 2vw + 1rem, 2.4rem);
+        text-align: center;
+        color: #1f2937;
+      }
+
+      form {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      }
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 999px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ffffff;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25);
+      }
+
+      button:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .item {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(99, 102, 241, 0.08);
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      .item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(79, 70, 229, 0.15);
+      }
+
+      .item button {
+        background: none;
+        color: #ef4444;
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        box-shadow: none;
+      }
+
+      .item button:hover {
+        color: #b91c1c;
+        box-shadow: none;
+      }
+
+      .item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #6366f1;
+      }
+
+      .completed {
+        color: #6b7280;
+        text-decoration: line-through;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #9ca3af;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: radial-gradient(circle at top, #1f2937, #111827);
+        }
+
+        .app {
+          background: rgba(17, 24, 39, 0.85);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+          color: #e5e7eb;
+        }
+
+        input[type="text"] {
+          background: rgba(31, 41, 55, 0.8);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          color: #f9fafb;
+        }
+
+        .item {
+          background: rgba(99, 102, 241, 0.12);
+        }
+
+        .completed {
+          color: #9ca3af;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app" aria-labelledby="app-title">
+      <h1 id="app-title">My Tasks</h1>
+      <form id="todo-form" aria-label="Add a new task">
+        <input
+          id="todo-input"
+          type="text"
+          name="task"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          aria-label="Task description"
+          required
+        />
+        <button type="submit">Add</button>
+      </form>
+      <section aria-live="polite">
+        <p id="empty-state" class="empty-state">No tasks yet. Add one above!</p>
+        <ul id="todo-list" role="list"></ul>
+      </section>
+    </main>
+
+    <template id="todo-item-template">
+      <li class="item" data-id="">
+        <input type="checkbox" aria-label="Mark task as complete" />
+        <span class="text"></span>
+        <button type="button" aria-label="Remove task">Remove</button>
+      </li>
+    </template>
+
+    <script>
+      const form = document.getElementById("todo-form");
+      const input = document.getElementById("todo-input");
+      const list = document.getElementById("todo-list");
+      const emptyState = document.getElementById("empty-state");
+      const template = document.getElementById("todo-item-template");
+
+      /**
+       * Update the empty state visibility based on list content.
+       */
+      function toggleEmptyState() {
+        const hasItems = list.children.length > 0;
+        emptyState.style.display = hasItems ? "none" : "block";
+      }
+
+      /**
+       * Create a new list item node.
+       * @param {string} text Task description.
+       */
+      function createTodoItem(text) {
+        const clone = template.content.firstElementChild.cloneNode(true);
+        const checkbox = clone.querySelector('input[type="checkbox"]');
+        const span = clone.querySelector(".text");
+        const removeButton = clone.querySelector("button");
+
+        span.textContent = text;
+
+        checkbox.addEventListener("change", () => {
+          span.classList.toggle("completed", checkbox.checked);
+        });
+
+        removeButton.addEventListener("click", () => {
+          clone.remove();
+          toggleEmptyState();
+          input.focus();
+        });
+
+        return clone;
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const text = input.value.trim();
+
+        if (!text) {
+          input.focus();
+          return;
+        }
+
+        const item = createTodoItem(text);
+        list.append(item);
+
+        input.value = "";
+        input.focus();
+        toggleEmptyState();
+      });
+
+      toggleEmptyState();
+    </script>
+  </body>
+</html>
